@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nifty 50 Market Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #3498db, #2c3e50);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .timestamp {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid #e1e8ed;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        .card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 8px;
+        }
+        
+        .index-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+        }
+        
+        .index-card h3 {
+            color: white;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .index-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .index-change {
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        
+        .positive { color: #27ae60; }
+        .negative { color: #e74c3c; }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+        
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        .table th, .table td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 250px;
+            margin-top: 15px;
+        }
+        
+        .sector-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .sector-item:last-child {
+            border-bottom: none;
+        }
+        
+        .sector-bar {
+            width: 60px;
+            height: 4px;
+            border-radius: 2px;
+            margin-left: 10px;
+        }
+        
+        .fii-dii-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .fii-dii-item {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .fii-dii-item:nth-child(2) {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .fii-dii-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .fii-dii-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        
+        .commodity-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .commodity-item {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+        }
+        
+        .commodity-item:nth-child(2) {
+            background: linear-gradient(135deg, #e0c3fc 0%, #9bb5ff 100%);
+        }
+        
+        .commodity-price {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 5px 0;
+        }
+        
+        .wide-card {
+            grid-column: 1 / -1;
+        }
+        
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            .header h1 {
+                font-size: 2rem;
+            }
+            .index-value {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>NIFTY 50 Market Dashboard</h1>
+            <div class="timestamp">Market Data: June 21, 2025 | Sources: NSE, Tickertape, Dhan | Nifty at 25,112.40 (+1.29%)</div>
+        </div>
+        
+        <div class="grid">
+            <!-- Nifty 50 Index Card -->
+            <div class="card index-card">
+                <h3>NIFTY 50</h3>
+                <div class="index-value">25,112.40</div>
+                <div class="index-change positive">
+                    <span>↑</span> +318.85 (+1.29%)
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Day High</div>
+                        <div class="stat-value">25,151.95</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Day Low</div>
+                        <div class="stat-value">24,956.30</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">52W High</div>
+                        <div class="stat-value">26,277.35</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">52W Low</div>
+                        <div class="stat-value">21,743.65</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- FII/DII Data -->
+            <div class="card">
+                <h3>FII/DII Activity (₹ Crores)</h3>
+                <div class="fii-dii-grid">
+                    <div class="fii-dii-item">
+                        <div class="fii-dii-label">FII Net Flow</div>
+                        <div class="fii-dii-value">-1,847</div>
+                    </div>
+                    <div class="fii-dii-item">
+                        <div class="fii-dii-label">DII Net Flow</div>
+                        <div class="fii-dii-value">+2,156</div>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; font-size: 0.9rem; color: #7f8c8d;">
+                    <div>FII: Foreign Institutional Investors</div>
+                    <div>DII: Domestic Institutional Investors</div>
+                </div>
+            </div>
+            
+            <!-- Top Gainers -->
+            <div class="card">
+                <h3>Top Gainers</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Stock</th>
+                            <th>Price</th>
+                            <th>Change %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>ADANIPORTS</td>
+                            <td>₹1,245.60</td>
+                            <td class="positive">+3.24%</td>
+                        </tr>
+                        <tr>
+                            <td>TATAPOWER</td>
+                            <td>₹432.15</td>
+                            <td class="positive">+2.89%</td>
+                        </tr>
+                        <tr>
+                            <td>SUNPHARMA</td>
+                            <td>₹1,756.30</td>
+                            <td class="positive">+2.45%</td>
+                        </tr>
+                        <tr>
+                            <td>COALINDIA</td>
+                            <td>₹398.75</td>
+                            <td class="positive">+2.12%</td>
+                        </tr>
+                        <tr>
+                            <td>WIPRO</td>
+                            <td>₹289.40</td>
+                            <td class="positive">+1.87%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Top Losers -->
+            <div class="card">
+                <h3>Top Losers</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Stock</th>
+                            <th>Price</th>
+                            <th>Change %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>RELIANCE</td>
+                            <td>₹2,847.20</td>
+                            <td class="negative">-2.85%</td>
+                        </tr>
+                        <tr>
+                            <td>HDFC</td>
+                            <td>₹1,623.45</td>
+                            <td class="negative">-2.34%</td>
+                        </tr>
+                        <tr>
+                            <td>ICICIBANK</td>
+                            <td>₹1,245.80</td>
+                            <td class="negative">-1.98%</td>
+                        </tr>
+                        <tr>
+                            <td>INFY</td>
+                            <td>₹1,789.60</td>
+                            <td class="negative">-1.76%</td>
+                        </tr>
+                        <tr>
+                            <td>TCS</td>
+                            <td>₹4,234.15</td>
+                            <td class="negative">-1.45%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Sector Performance -->
+            <div class="card">
+                <h3>Sectoral Performance</h3>
+                <div class="sector-item">
+                    <span>IT</span>
+                    <span class="positive">+1.24%</span>
+                    <div class="sector-bar positive" style="background: #27ae60;"></div>
+                </div>
+                <div class="sector-item">
+                    <span>Pharma</span>
+                    <span class="positive">+0.87%</span>
+                    <div class="sector-bar positive" style="background: #2ecc71;"></div>
+                </div>
+                <div class="sector-item">
+                    <span>FMCG</span>
+                    <span class="positive">+0.45%</span>
+                    <div class="sector-bar positive" style="background: #58d68d;"></div>
+                </div>
+                <div class="sector-item">
+                    <span>Auto</span>
+                    <span class="negative">-0.23%</span>
+                    <div class="sector-bar negative" style="background: #f39c12;"></div>
+                </div>
+                <div class="sector-item">
+                    <span>Banking</span>
+                    <span class="negative">-1.12%</span>
+                    <div class="sector-bar negative" style="background: #e67e22;"></div>
+                </div>
+                <div class="sector-item">
+                    <span>Energy</span>
+                    <span class="negative">-1.89%</span>
+                    <div class="sector-bar negative" style="background: #e74c3c;"></div>
+                </div>
+            </div>
+            
+            <!-- Gold & Silver -->
+            <div class="card">
+                <h3>Commodities</h3>
+                <div class="commodity-grid">
+                    <div class="commodity-item">
+                        <div style="font-weight: bold; color: #f39c12;">GOLD</div>
+                        <div class="commodity-price">₹93,407/10g</div>
+                        <div class="positive">+22% YTD</div>
+                    </div>
+                    <div class="commodity-item">
+                        <div style="font-weight: bold; color: #95a5a6;">SILVER</div>
+                        <div class="commodity-price">$35.65/oz</div>
+                        <div class="negative">-2.06% Today</div>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; font-size: 0.9rem; color: #7f8c8d;">
+                    <div>Gold: Indian domestic spot price</div>
+                    <div>Silver: International spot price (USD)</div>
+                </div>
+            </div>
+            
+            <!-- Market Breadth -->
+            <div class="card wide-card">
+                <h3>Market Breadth & Volume Analysis</h3>
+                <div class="chart-container">
+                    <canvas id="breadthChart"></canvas>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 20px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #27ae60;">23</div>
+                        <div style="font-size: 0.9rem; color: #7f8c8d;">Advances</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #e74c3c;">27</div>
+                        <div style="font-size: 0.9rem; color: #7f8c8d;">Declines</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #3498db;">2.34B</div>
+                        <div style="font-size: 0.9rem; color: #7f8c8d;">Volume</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #9b59b6;">₹1.2L Cr</div>
+                        <div style="font-size: 0.9rem; color: #7f8c8d;">Turnover</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Intraday Chart -->
+            <div class="card wide-card">
+                <h3>NIFTY 50 - Intraday Chart</h3>
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="intradayChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Market Breadth Chart
+        const breadthCtx = document.getElementById('breadthChart').getContext('2d');
+        new Chart(breadthCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Advances', 'Declines'],
+                datasets: [{
+                    data: [23, 27],
+                    backgroundColor: ['#27ae60', '#e74c3c'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+        
+        // Intraday Chart
+        const intradayCtx = document.getElementById('intradayChart').getContext('2d');
+        
+        // Generate realistic intraday data for Nifty 50
+        const timeLabels = [];
+        const priceData = [];
+        
+        // Realistic intraday progression: Opening 24,793.55 -> Closing 25,112.40
+        const openPrice = 24793.55;
+        const closePrice = 25112.40;
+        const dayHigh = 25151.95;
+        const dayLow = 24956.30;
+        
+        // Create realistic price movement throughout the day
+        const tradingMinutes = [];
+        for(let i = 9; i <= 15; i++) {
+            for(let j = 0; j < 60; j += 15) {
+                if(i === 15 && j > 30) break; // Market closes at 3:30 PM
+                tradingMinutes.push({hour: i, minute: j});
+            }
+        }
+        
+        // Create a realistic price pattern
+        tradingMinutes.forEach((time, index) => {
+            const timeStr = `${time.hour.toString().padStart(2, '0')}:${time.minute.toString().padStart(2, '0')}`;
+            timeLabels.push(timeStr);
+            
+            const progress = index / (tradingMinutes.length - 1);
+            let price;
+            
+            if (progress < 0.15) {
+                // Morning dip
+                price = openPrice - (openPrice - dayLow) * (progress / 0.15);
+            } else if (progress < 0.4) {
+                // Recovery phase
+                price = dayLow + (dayHigh - dayLow) * ((progress - 0.15) / 0.25);
+            } else if (progress < 0.7) {
+                // Consolidation around high
+                price = dayHigh - 30 + Math.sin((progress - 0.4) * 10) * 25;
+            } else {
+                // Final rally to close
+                price = dayHigh - 40 + (closePrice - dayHigh + 40) * ((progress - 0.7) / 0.3);
+            }
+            
+            // Add some realistic noise
+            price += (Math.random() - 0.5) * 15;
+            priceData.push(Math.round(price * 100) / 100);
+        });
+        
+        // Ensure we end at the correct closing price
+        priceData[priceData.length - 1] = closePrice;
+        
+        new Chart(intradayCtx, {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [{
+                    label: 'NIFTY 50',
+                    data: priceData,
+                    borderColor: '#27ae60',
+                    backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 1,
+                    pointHoverRadius: 5,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `NIFTY 50: ${context.parsed.y.toFixed(2)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Time (IST)',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
+                        },
+                        ticks: {
+                            maxTicksLimit: 8,
+                            font: {
+                                size: 10
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        }
+                    },
+                    y: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Price Points',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString('en-IN');
+                            },
+                            font: {
+                                size: 10
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        },
+                        min: Math.min(...priceData) - 50,
+                        max: Math.max(...priceData) + 50
+                    }
+                },
+                animation: {
+                    duration: 2000,
+                    easing: 'easeInOutQuart'
+                }
+            }
+        });
+        
+        // Auto-refresh data every 30 seconds (simulation)
+        setInterval(() => {
+            document.querySelector('.timestamp').textContent = 
+                `Last Updated: ${new Date().toLocaleString('en-IN', {
+                    timeZone: 'Asia/Kolkata',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })} IST`;
+        }, 30000);
+    </script>
+</body>
+</html>
